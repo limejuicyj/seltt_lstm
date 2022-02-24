@@ -99,10 +99,10 @@ class LSTM(nn.Module):
         return LSTMCell(self.hidden_size, self.hidden_size, self.bias, self.device)
 
     def init_hidden(self, batch_size):
-        print("<START><lstm.py><class LSTM><init_hidden>")
+        # print("<START><lstm.py><class LSTM><init_hidden>")
         h = torch.zeros(batch_size, self.hidden_size).to(self.device)
         c = torch.zeros(batch_size, self.hidden_size).to(self.device)
-        print(" RETRUN> h, c ")
+        # print(" RETRUN> h, c ")
         return h, c
 
     def param_count(self):
@@ -135,7 +135,7 @@ class LSTM(nn.Module):
         """
 
         batch_size, seq_len, input_size = input.size()
-        print("YJYJ4 :{}".format(input.size()))
+        # print("<CHECK6> {}".format(input.size()))
         outputs = torch.zeros(batch_size, seq_len, self.hidden_size).to(input.device)
 
         # initialise hidden and cell states.
