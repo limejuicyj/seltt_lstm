@@ -22,7 +22,7 @@ from classifier import MNIST_Classifier
 
 
 ### Running GPU Setting ##
-os.environ["CUDA_VISIBLE_DEVICES"] = '4'
+os.environ["CUDA_VISIBLE_DEVICES"] = '3'
 
 
 ##### 1. BASIC SETTING #####
@@ -30,11 +30,11 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '4'
 parser = argparse.ArgumentParser(description='Sequence Modeling - (Permuted) Sequential MNIST')
 parser.add_argument('--mode', action='store_true', default=0,
                     help='use selective tensorized RNN model (default: 0/ 0:basic, 1:tt, 2:selective)')
-parser.add_argument('--n_layers', type=int, default=1,
+parser.add_argument('--n_layers', type=int, default=7,
                     help='# of layers (default: 1)')
 parser.add_argument('--n_front_layers', type=int, default=1,
                     help='# of front layers (default: 1)')
-parser.add_argument('--epochs', type=int, default=1,
+parser.add_argument('--epochs', type=int, default=2,
                     help='upper epoch limit (default: 20)')
 parser.add_argument('--batch_size', type=int, default=128, metavar='N',
                     help='batch size (default: 128)')
@@ -52,7 +52,7 @@ parser.add_argument('--seed', type=int, default=1111,
 parser.add_argument('--cuda', action='store_false',
                     help='use CUDA (default: True)')
 parser.add_argument('--gru', action='store_true',
-                    help='use GRU instead of LSTM (default: False)')
+
 parser.add_argument('--clip', type=float, default=-1,
                     help='gradient clip, -1 means no clip (default: -1)')
 parser.add_argument('--log_interval', type=int, default=100, metavar='N',
@@ -206,21 +206,21 @@ def train(ep):
         # print(batch_idx)
         if args.cuda:
             data, target = data.cuda(), target.cuda()               # (2) 데이터랑 라벨이랑 쿠다로 보냄
-        print("YJYJ : data : ",data.shape)
+        # print("<CHECK1> data : ",data.shape)
         data = data.view(-1, seq_length, input_channels)
         # data = data.view(batch_size, seq_length, input_channels)
-        print("YJYJ2 : data : ", data.shape)
+        # print("<CHECK2> data : ", data.shape)
         if args.permute:
             data = data[:, permute, :]
-        print("YJYJ3 : data : ", data.shape)
+        # print("<CHECK3> data : ", data.shape)
         data, target = Variable(data), Variable(target)             # (3) 미분값 계산. Variable():autograd 안에있는 함수: backprop위한 미분값 자동 계산
                                                                     #      a=Variable(a, requires_grad=True)면 a.data/a.grad/a.grad_fn 3개의 값을 가짐
                                                                     #      후에 반드시 backward()를 써줘야 자동계산한 값들이 반영이됨
         optimizer.zero_grad()                                       # (4) 옵티마이저의 그래디언트를 0으로 초기화한번 해줘야함. 그렇지않음 버퍼걸려서 잘 안됨
-        print("check1>> data: {}".format(data.shape))
+        # print("<CHECK4> data: {}".format(data.shape))
         output = model(data)                                        # (5) forward propagation
-        print("check2>> output: {}".format(output.shape))
-        print("      >> target: {}".format(target.shape))
+        # print("<CHECK5> output: {}".format(output.shape))
+        # print("      >> target: {}".format(target.shape))
         loss = F.nll_loss(output, target)                           # (6) loss 계산
         loss.backward()                                             # (7) Back propagation
         if args.clip > 0:

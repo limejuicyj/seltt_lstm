@@ -208,21 +208,21 @@ def train(ep):
         # print(batch_idx)
         if args.cuda:
             data, target = data.cuda(), target.cuda()               # (2) 데이터랑 라벨이랑 쿠다로 보냄
-        print("YJYJ : data : ",data.shape)
+        # print("<CHECK1> data : ",data.shape)
         data = data.view(-1, seq_length, input_channels)
         # data = data.view(batch_size, seq_length, input_channels)
-        print("YJYJ2 : data : ", data.shape)
+        # print("<CHECK2> data : ", data.shape)
         if args.permute:
             data = data[:, permute, :]
-        print("YJYJ3 : data : ", data.shape)
+        # print("<CHECK3> data : ", data.shape)
         data, target = Variable(data), Variable(target)             # (3) 미분값 계산. Variable():autograd 안에있는 함수: backprop위한 미분값 자동 계산
                                                                     #      a=Variable(a, requires_grad=True)면 a.data/a.grad/a.grad_fn 3개의 값을 가짐
                                                                     #      후에 반드시 backward()를 써줘야 자동계산한 값들이 반영이됨
         optimizer.zero_grad()                                       # (4) 옵티마이저의 그래디언트를 0으로 초기화한번 해줘야함. 그렇지않음 버퍼걸려서 잘 안됨
-        print("check1>> data: {}".format(data.shape))
+        # print("<CHECK4> data: {}".format(data.shape))
         output = model(data)                                        # (5) forward propagation
-        print("check2>> output: {}".format(output.shape))
-        print("      >> target: {}".format(target.shape))
+        # print("<CHECK5> output: {}".format(output.shape))
+        # print("      >> target: {}".format(target.shape))
         loss = F.nll_loss(output, target)                           # (6) loss 계산
         loss.backward()                                             # (7) Back propagation
         if args.clip > 0:

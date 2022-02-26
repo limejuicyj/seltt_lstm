@@ -108,11 +108,11 @@ class MNIST_Classifier(nn.Module):
             out, last_hidden = self.rnn(inputs)
         else:
             out, (last_hidden, last_cell) = self.rnn(inputs)
-            print("inputs: {}".format(inputs.shape))
-            print("out: {}, out[:,-1,:]: {}".format(out.shape,out[:, -1, :].shape))
-            print("last_hidden: {}, last_cell: {}".format(last_hidden.shape, last_cell.shape))
-            print("last_hidden = last_cell : {}".format(torch.allclose(last_hidden,last_cell)))
+            # print("inputs: {}".format(inputs.shape))
+            # print("out: {}, out[:,-1,:]: {}".format(out.shape,out[:, -1, :].shape))
+            # print("last_hidden: {}, last_cell: {}".format(last_hidden.shape, last_cell.shape))
+            # print("last_hidden = last_cell : {}".format(torch.allclose(last_hidden,last_cell)))
         o = self.linear(out[:, -1, :])
-        print("o:{}".format(o.shape))
+        # print("o:{}".format(o.shape))
 
         return F.log_softmax(o, dim=1)
