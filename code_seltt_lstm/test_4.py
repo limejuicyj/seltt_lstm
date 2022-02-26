@@ -28,7 +28,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '4'
 ##### 1. BASIC SETTING #####
 ## 1.(1) Argument Setting ##
 parser = argparse.ArgumentParser(description='Sequence Modeling - (Permuted) Sequential MNIST')
-parser.add_argument('--mode', action='store_true', default=2,
+parser.add_argument('--mode', type=int, default=2,
                     help='use selective tensorized RNN model (default: 0/ 0:basic, 1:tt, 2:selective)')
 parser.add_argument('--n_layers', type=int, default=3,
                     help='# of layers (default: 1)')

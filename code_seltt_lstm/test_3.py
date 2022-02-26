@@ -2,6 +2,7 @@
 for CIFAR 10 DATA
 """
 # -*- coding: utf-8 -*-
+
 import os, sys
 
 from time import time
@@ -22,19 +23,25 @@ from classifier import MNIST_Classifier
 
 
 ### Running GPU Setting ##
-os.environ["CUDA_VISIBLE_DEVICES"] = '3'
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+# os.environ["CUDA_VISIBLE_DEVICES"] = '2'
+# os.environ["CUDA_VISIBLE_DEVICES"] = '3'
+# os.environ["CUDA_VISIBLE_DEVICES"] = '4'
+# os.environ["CUDA_VISIBLE_DEVICES"] = '5'
+# os.environ["CUDA_VISIBLE_DEVICES"] = '6'
+# os.environ["CUDA_VISIBLE_DEVICES"] = '7'
 
 
 ##### 1. BASIC SETTING #####
 ## 1.(1) Argument Setting ##
 parser = argparse.ArgumentParser(description='Sequence Modeling - (Permuted) Sequential MNIST')
-parser.add_argument('--mode', action='store_true', default=0,
+parser.add_argument('--mode', type=int, default=2,
                     help='use selective tensorized RNN model (default: 0/ 0:basic, 1:tt, 2:selective)')
-parser.add_argument('--n_layers', type=int, default=7,
+parser.add_argument('--n_layers', type=int, default=1,
                     help='# of layers (default: 1)')
 parser.add_argument('--n_front_layers', type=int, default=1,
                     help='# of front layers (default: 1)')
-parser.add_argument('--epochs', type=int, default=2,
+parser.add_argument('--epochs', type=int, default=5,
                     help='upper epoch limit (default: 20)')
 parser.add_argument('--batch_size', type=int, default=128, metavar='N',
                     help='batch size (default: 128)')
@@ -52,7 +59,7 @@ parser.add_argument('--seed', type=int, default=1111,
 parser.add_argument('--cuda', action='store_false',
                     help='use CUDA (default: True)')
 parser.add_argument('--gru', action='store_true',
-
+                    help='use GRU instead of LSTM (default: False)')
 parser.add_argument('--clip', type=float, default=-1,
                     help='gradient clip, -1 means no clip (default: -1)')
 parser.add_argument('--log_interval', type=int, default=100, metavar='N',
@@ -76,9 +83,9 @@ parser.add_argument('--extra_core', type=str, default='none',
 parser.add_argument("--gpu_no", type=int, default=0, help =\
                 "The index of GPU to use if multiple are available. If none, CPU will be used.")
 
-# Set tt 안걸리는경우
+# Set tt
 args = parser.parse_args()
-if not args.mode:                     #mode가 basic이면  args.ncores, ttrank = 1
+if not args.mode:                     #if mode is basic : args.ncores, ttrank = 1
     args.ncores = 1
     args.ttrank = 1
 assert not (args.naive_tt and not args.mode)      # args.naive_tt = False, args.tt = False
@@ -133,7 +140,7 @@ else:
     name = (f"{gru_name}_in{input_channels}_{mode_name}_n{args.n_layers}"
         f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_ep{args.epochs}")
 
-sys.stdout = open(r'./results/cifar10_'+ name + '.txt', 'w')  # run결과 외부에 파일로 저장
+sys.stdout = open(r'./results/cifar10_'+ name + '.txt', 'w')  # saving results
 print("File name : ",name)
 print("Arguments: ",args)
 print("Input Data Shape : [batch_size,seq_len,input_size]=[{},{},{}]".format(batch_size,seq_length,input_channels))
