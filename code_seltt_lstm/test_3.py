@@ -52,7 +52,7 @@ parser.add_argument('--seed', type=int, default=1111,
 parser.add_argument('--cuda', action='store_false',
                     help='use CUDA (default: True)')
 parser.add_argument('--gru', action='store_true',
-                    help='use GRU instead of LSTM (default: False)')
+
 parser.add_argument('--clip', type=float, default=-1,
                     help='gradient clip, -1 means no clip (default: -1)')
 parser.add_argument('--log_interval', type=int, default=100, metavar='N',
