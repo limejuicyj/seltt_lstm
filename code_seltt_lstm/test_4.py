@@ -18,7 +18,7 @@ import warnings
 
 
 from utils_4 import data_generator, count_model_params
-from classifier import MNIST_Classifier
+from classifier_4 import MNIST_Classifier
 
 
 ### Running GPU Setting ##
@@ -112,14 +112,15 @@ root = r'/home/youjin/research/tensor_new/data/space/altitude/'
 filename = 'K3A_EPH_ELE_altitude.npy'
 
 batch_size = args.batch_size
-n_classes = 10
+n_classes = 6
 epochs = args.epochs
 steps = 0
 if args.permute:    # each pixel(R,G,B pairs) is input for a time step.
-    input_channels = 3      # input shape: [batch_size,seq_len,input_size]=[128, 32*32, 3]
+    input_channels = 1      # input shape: [batch_size,seq_len,input_size]=[128, 30, 1]
 else:               # each row(of pixels) is input for a time step.
-    input_channels = 6     # input shape: [batch_size,seq_len,input_size]=[128, 32, 32 * 3]
-seq_length = 10
+    input_channels = 6     # input shape: [batch_size,seq_len,input_size]=[128, 5, 6]
+x_seq_length = 10 # 현재: 궤도 6요소 -> 궤도 6요소 예측 / 궤도 6요소 -> altitude 예측할 때 다시 생각해봐야 함.
+y_seq_length = 10
 
 
 
@@ -130,15 +131,15 @@ mode_name = 'sel' if args.mode == 2 else ('tt' if args.mode == 1 else 'basic')
 gru_name = 'gru' if args.gru else 'lstm'
 if args.mode == 2:
     name = (f"{gru_name}_in{input_channels}_{mode_name}_n{args.n_layers}({args.n_front_layers}+{args.n_layers - args.n_front_layers})"
-            f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_ep{args.epochs}")
+            f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_lr{args.lr}_ep{args.epochs}")
 else:
     name = (f"{gru_name}_in{input_channels}_{mode_name}_n{args.n_layers}"
-        f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_ep{args.epochs}")
+        f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_lr{args.lr}_ep{args.epochs}")
 
 sys.stdout = open(r'./results/ele_'+ name + '.txt', 'w')  # run결과 외부에 파일로 저장
 print("File name : ",name)
 print("Arguments: ",args)
-print("Input Data Shape : [batch_size,seq_len,input_size]=[{},{},{}]".format(batch_size,seq_length,input_channels))
+print("Input Data Shape : [batch_size,seq_len,input_size]=[{},{},{}]".format(batch_size,x_seq_length,input_channels))
 
 
 
@@ -146,7 +147,7 @@ print("Input Data Shape : [batch_size,seq_len,input_size]=[{},{},{}]".format(bat
 
 ##### 2. DATA LOADING #####
 print("\n### Data Loaded from data loader ###")
-train_loader, val_loader, test_loader = data_generator(root, filename, seq_length, batch_size)
+train_loader, val_loader, test_loader = data_generator(root, filename, x_seq_length, y_seq_length, batch_size)
 print("train_loader: {}, \nval_loader: {}, \ntest_loader: {}".format(train_loader, val_loader, test_loader))
 
 
@@ -157,6 +158,7 @@ print("train_loader: {}, \nval_loader: {}, \ntest_loader: {}".format(train_loade
 ### 3.(1) Main Model  ###
 print("\n### Model 정의 ###")
 model = MNIST_Classifier(input_channels, n_classes, args.hidden_size, args.n_layers, args.n_front_layers, device,
+                         x_seq_length, y_seq_length,
                          mode=args.mode, gru=args.gru, n_cores=args.ncores,
                          tt_rank=args.ttrank, naive_tt=args.naive_tt,
                          extra_core=args.extra_core)
@@ -193,9 +195,7 @@ if args.lr_scheduler:
 # print(f"input channels: {input_channels}; seq_length: {seq_length}; cuda: {args.cuda}")
 # exit()
 
-
-
-
+loss_fn = torch.nn.MSELoss()
 
 
 ##### 4. TRAINING #####
@@ -209,7 +209,7 @@ def train(ep):
         if args.cuda:
             data, target = data.cuda(), target.cuda()               # (2) 데이터랑 라벨이랑 쿠다로 보냄
         # print("<CHECK1> data : ",data.shape)
-        data = data.view(-1, seq_length, input_channels)
+        data = data.view(-1, x_seq_length, input_channels)
         # data = data.view(batch_size, seq_length, input_channels)
         # print("<CHECK2> data : ", data.shape)
         if args.permute:
@@ -221,25 +221,28 @@ def train(ep):
         optimizer.zero_grad()                                       # (4) 옵티마이저의 그래디언트를 0으로 초기화한번 해줘야함. 그렇지않음 버퍼걸려서 잘 안됨
         # print("<CHECK4> data: {}".format(data.shape))
         output = model(data)                                        # (5) forward propagation
-        # print("<CHECK5> output: {}".format(output.shape))
-        # print("      >> target: {}".format(target.shape))
-        loss = F.nll_loss(output, target)                           # (6) loss 계산
+        #print("check2>> output: {}".format(output.shape))
+        #print("      >> target: {}".format(target.shape))
+        loss = loss_fn(output, target)                           # (6) loss 계산
         loss.backward()                                             # (7) Back propagation
         if args.clip > 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
         optimizer.step()                                            # (8) 가중치 업데이트
 
-        pred = output.data.max(1, keepdim=True)[1]
-        train_correct += pred.eq(target.data.view_as(pred)).cpu().sum()
+        #pred = output.data.max(1, keepdim=True)[1]
+        #train_correct += pred.eq(target.data.view_as(pred)).cpu().sum()
         train_loss += loss                                          # train_loss에는 그동안의 loss를 계속 더해놓는다
         # print(f"step: {steps}; loss: {loss}")
         steps += 1
         if batch_idx > 0 and (batch_idx + 1) % args.log_interval == 0:          # 트레이닝상황 출력 log_interval=100번마다 한번씩하기
             avg_train_loss = train_loss.item() / args.log_interval              # 100번동안의 평균 트레이닝 로스 및 acc
-            avg_train_acc = 100. * train_correct.item() / (args.log_interval * batch_size)
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}\tAccuracy: ({:.2f}%)\tSteps: {}'.format(
+            #avg_train_acc = 100. * train_correct.item() / (args.log_interval * batch_size)
+            # print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}\tAccuracy: ({:.2f}%)\tSteps: {}'.format(
+            #     ep, batch_idx * batch_size, len(train_loader.dataset),
+            #     100. * batch_idx / len(train_loader), avg_train_loss, avg_train_acc, steps))
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}\tSteps: {}'.format(
                 ep, batch_idx * batch_size, len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), avg_train_loss, avg_train_acc, steps))
+                100. * batch_idx / len(train_loader), avg_train_loss, steps))
             train_loss = 0
             train_correct = 0
 
@@ -249,7 +252,8 @@ def train(ep):
 
 ##### 5. TESTING #####
 best_test_acc = 0.0
-def test(test_model, loader, val_or_test="val"):
+separate_file_for_accuracy = 1
+def test(test_model, loader, epoch, val_or_test="val"):
     test_model.eval()
     test_loss = 0
     correct = 0
@@ -258,19 +262,19 @@ def test(test_model, loader, val_or_test="val"):
         for data, target in loader:
             if args.cuda:
                 data, target = data.cuda(), target.cuda()
-            data = data.view(-1, seq_length, input_channels)
+            data = data.view(-1, x_seq_length, input_channels)
             if args.permute:
                 data = data[:, permute, :]
             data, target = Variable(data), Variable(target)
             output = test_model(data)
-            test_loss += F.nll_loss(output, target, size_average=False).item()
-            pred = output.data.max(1, keepdim=True)[1]
-            correct += pred.eq(target.data.view_as(pred)).cpu().sum()
+            test_loss += loss_fn(output, target).item()
+            #pred = output.data.max(1, keepdim=True)[1]
+            #correct += pred.eq(target.data.view_as(pred)).cpu().sum()
 
         test_loss /= len(loader.dataset)
-        test_acc = 100. * correct / len(loader.dataset)
-        print('\n{} set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
-            val_or_test, test_loss, correct, len(loader.dataset), test_acc))
+        #test_acc = 100. * correct / len(loader.dataset)
+        #print('\n{} set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
+        #   val_or_test, test_loss, correct, len(loader.dataset), test_acc))
 
         return test_loss
 
@@ -284,8 +288,14 @@ if __name__ == "__main__":
 
     for epoch in range(1, epochs+1):
         train(epoch)
-        test(model, val_loader, "val")
+        test_loss = test(model, val_loader, epoch, "val")
         if args.lr_scheduler: scheduler.step()
-        print(f"Runtime: {time() - start:.0f} sec\n")
+        if separate_file_for_accuracy: 
+            with open(r'./ttlstm_ele_test/results/ele_'+ name + '_acc.txt', 'a') as f:
+                f.write('\n{} set: Epoch: {} Average loss: {:.8f}, Runtime: {:.0f} sec\n'.format(
+                    "val", epoch, test_loss, time() - start))
+        else:
+            print('\n{} set: Average loss: {:.8f} \n'.format("val", test_loss))
+            print(f"Runtime: {time() - start:.0f} sec\n")
 
 sys.stdout.close()
