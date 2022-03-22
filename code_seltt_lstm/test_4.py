@@ -125,6 +125,7 @@ else:               # each row(of pixels) is input for a time step.
 x_seq_length = 5 # 현재: 궤도 6요소 -> 궤도 6요소 예측 / 궤도 6요소 -> altitude 예측할 때 다시 생각해봐야 함.
 y_seq_length = 1
 data_type = args.year
+year = ['full', '2016', '2017', '2018', '2019', '2020'][data_type]
 
 
 ## 1.(5) Save the data ##
@@ -132,10 +133,10 @@ mode_name = 'sel' if args.mode == 2 else ('tt' if args.mode == 1 else 'basic')
 gru_name = 'gru' if args.gru else 'lstm'
 if args.mode == 2:
     name = (f"{gru_name}_in{input_channels}_{mode_name}_n{args.n_layers}({args.n_front_layers}+{args.n_layers - args.n_front_layers})"
-            f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_lr{args.lr}_ep{args.epochs}")
+            f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_{year}_lr{args.lr}_ep{args.epochs}")
 else:
     name = (f"{gru_name}_in{input_channels}_{mode_name}_n{args.n_layers}"
-        f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_lr{args.lr}_ep{args.epochs}")
+        f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_{year}_lr{args.lr}_ep{args.epochs}")
 
 sys.stdout = open(root + 'results/ele_'+ name + '.txt', 'w')  # run결과 외부에 파일로 저장
 print("File name : ",name)
