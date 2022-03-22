@@ -17,7 +17,7 @@ from torch.autograd import Variable
 import warnings
 
 
-from utils_4 import data_generator, count_model_params
+from utils_4 import data_generator, count_model_params, Data_Type
 from classifier_4 import MNIST_Classifier
 
 
@@ -76,6 +76,9 @@ parser.add_argument('--extra_core', type=str, default='none',
 parser.add_argument("--gpu_no", type=int, default=0, help =\
                 "The index of GPU to use if multiple are available. If none, CPU will be used.")
 
+parser.add_argument('--year', type=int, default=1,
+                    help='set dataset to use (default: 1)')
+
 # Set tt 안걸리는경우
 args = parser.parse_args()
 if not args.mode:                     #mode가 basic이면  args.ncores, ttrank = 1
@@ -122,9 +125,8 @@ else:               # each row(of pixels) is input for a time step.
     input_channels = 6     # input shape: [batch_size,seq_len,input_size]=[128, 5, 6]
 x_seq_length = 5 # 현재: 궤도 6요소 -> 궤도 6요소 예측 / 궤도 6요소 -> altitude 예측할 때 다시 생각해봐야 함.
 y_seq_length = 1
-
-
-
+data_type = args.year
+year = ['full', '2016', '2017', '2018', '2019', '2020'][data_type]
 
 
 ## 1.(5) Save the data ##
@@ -132,10 +134,10 @@ mode_name = 'sel' if args.mode == 2 else ('tt' if args.mode == 1 else 'basic')
 gru_name = 'gru' if args.gru else 'lstm'
 if args.mode == 2:
     name = (f"{gru_name}_in{input_channels}_{mode_name}_n{args.n_layers}({args.n_front_layers}+{args.n_layers - args.n_front_layers})"
-            f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_lr{args.lr}_ep{args.epochs}")
+            f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_{year}_lr{args.lr}_ep{args.epochs}")
 else:
     name = (f"{gru_name}_in{input_channels}_{mode_name}_n{args.n_layers}"
-        f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_lr{args.lr}_ep{args.epochs}")
+        f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_{year}_lr{args.lr}_ep{args.epochs}")
 
 sys.stdout = open(OUTPUT_FOLDER + name + '.txt', 'w')  # run결과 외부에 파일로 저장
 print("File name : ",name)
@@ -148,7 +150,7 @@ print("Input Data Shape : [batch_size,seq_len,input_size]=[{},{},{}]".format(bat
 
 ##### 2. DATA LOADING #####
 print("\n### Data Loaded from data loader ###")
-train_loader, val_loader, test_loader = data_generator(root, filename, x_seq_length, y_seq_length, batch_size)
+train_loader, val_loader, test_loader = data_generator(root, filename, x_seq_length, y_seq_length, batch_size, data_type)
 print("train_loader: {}, \nval_loader: {}, \ntest_loader: {}".format(train_loader, val_loader, test_loader))
 
 
