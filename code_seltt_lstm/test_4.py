@@ -134,10 +134,10 @@ mode_name = 'sel' if args.mode == 2 else ('tt' if args.mode == 1 else 'basic')
 gru_name = 'gru' if args.gru else 'lstm'
 if args.mode == 2:
     name = (f"{gru_name}_in{input_channels}_{mode_name}_n{args.n_layers}({args.n_front_layers}+{args.n_layers - args.n_front_layers})"
-            f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_{year}_lr{args.lr}_ep{args.epochs}")
+            f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_s{args.seed}_{year}_lr{args.lr}_ep{args.epochs}")
 else:
     name = (f"{gru_name}_in{input_channels}_{mode_name}_n{args.n_layers}"
-        f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_{year}_lr{args.lr}_ep{args.epochs}")
+        f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_s{args.seed}_{year}_lr{args.lr}_ep{args.epochs}")
 
 sys.stdout = open(OUTPUT_FOLDER + name + '.txt', 'w')  # run결과 외부에 파일로 저장
 print("File name : ",name)
