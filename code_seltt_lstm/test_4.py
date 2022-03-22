@@ -17,7 +17,7 @@ from torch.autograd import Variable
 import warnings
 
 
-from utils_4 import data_generator, count_model_params
+from utils_4 import data_generator, count_model_params, Data_Type
 from classifier_4 import MNIST_Classifier
 
 
@@ -119,11 +119,8 @@ if args.permute:    # each pixel(R,G,B pairs) is input for a time step.
     input_channels = 1      # input shape: [batch_size,seq_len,input_size]=[128, 30, 1]
 else:               # each row(of pixels) is input for a time step.
     input_channels = 6     # input shape: [batch_size,seq_len,input_size]=[128, 5, 6]
-x_seq_length = 10 # 현재: 궤도 6요소 -> 궤도 6요소 예측 / 궤도 6요소 -> altitude 예측할 때 다시 생각해봐야 함.
-y_seq_length = 10
-
-
-
+x_seq_length = 5 # 현재: 궤도 6요소 -> 궤도 6요소 예측 / 궤도 6요소 -> altitude 예측할 때 다시 생각해봐야 함.
+y_seq_length = 1
 
 
 ## 1.(5) Save the data ##
@@ -136,7 +133,17 @@ else:
     name = (f"{gru_name}_in{input_channels}_{mode_name}_n{args.n_layers}"
         f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_lr{args.lr}_ep{args.epochs}")
 
-sys.stdout = open(r'./results/ele_'+ name + '.txt', 'w')  # run결과 외부에 파일로 저장
+
+
+
+
+
+
+
+
+
+base_dir = r'/home/youjin/research/tensor_new/results/'
+sys.stdout = open('ele_'+ name + '.txt', 'w')  # run결과 외부에 파일로 저장
 print("File name : ",name)
 print("Arguments: ",args)
 print("Input Data Shape : [batch_size,seq_len,input_size]=[{},{},{}]".format(batch_size,x_seq_length,input_channels))
@@ -147,7 +154,7 @@ print("Input Data Shape : [batch_size,seq_len,input_size]=[{},{},{}]".format(bat
 
 ##### 2. DATA LOADING #####
 print("\n### Data Loaded from data loader ###")
-train_loader, val_loader, test_loader = data_generator(root, filename, x_seq_length, y_seq_length, batch_size)
+train_loader, val_loader, test_loader = data_generator(root, filename, x_seq_length, y_seq_length, batch_size, Data_Type.YEAR_2017)
 print("train_loader: {}, \nval_loader: {}, \ntest_loader: {}".format(train_loader, val_loader, test_loader))
 
 
@@ -291,7 +298,7 @@ if __name__ == "__main__":
         test_loss = test(model, val_loader, epoch, "val")
         if args.lr_scheduler: scheduler.step()
         if separate_file_for_accuracy: 
-            with open(r'./ttlstm_ele_test/results/ele_'+ name + '_acc.txt', 'a') as f:
+            with open('ele_'+ name + '_acc.txt', 'a') as f:
                 f.write('\n{} set: Epoch: {} Average loss: {:.8f}, Runtime: {:.0f} sec\n'.format(
                     "val", epoch, test_loss, time() - start))
         else:

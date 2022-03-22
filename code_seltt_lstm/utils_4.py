@@ -3,13 +3,39 @@ import numpy as np
 from torchvision import datasets, transforms
 from torch.utils.data import Dataset, random_split
 from sklearn.preprocessing import MinMaxScaler
-
+from enum import Enum
 
 # definition
 data_composition = 1 # 1: (x-궤도 6 요소/y-궤도6요소) 2: (x-궤도6요소/y-altitude) 
-full_data = 0 # definition for whether will use full data or not
-year_2016 = 527041
+
+year_2016_start = 0
 year_2016_dec_start = 482400
+year_2016_end = 527041
+
+year_2017_start = 527041
+year_2017_dec_start = 1008001
+year_2017_end = 1052641
+
+year_2018_start = 1052641
+year_2018_dec_start = 1533601
+year_2018_end = 1578241
+
+year_2019_start = 1578241
+year_2019_dec_start = 2059201
+year_2019_end = 2103841
+
+year_2020_start = 2103841
+year_2020_dec_start = 2586241
+year_2020_end = -1
+
+class Data_Type(Enum):
+    FULL = 0
+    YEAR_2016 = 1
+    YEAR_2017 = 2
+    YEAR_2018 = 3
+    YEAR_2019 = 4
+    YEAR_2020 = 5
+
 
 class ELEDataset(Dataset): 
     def __init__(self, seq):
@@ -28,24 +54,59 @@ class ELEDataset(Dataset):
         x = torch.FloatTensor(self.x[idx])
         y = torch.FloatTensor(self.y[idx])
         return x, y
-    # collate_fn 필요할지도....
 
-if data_composition == 1:
-    def seq_data(data, x_seq_length, y_seq_length):  # x에는 0~4까지 5개 row가 들어가고, y에 5 (6번째) row 들어감 5일값으로 6일예측
-        seq = []
-        data = data[:, :-1] if full_data else data[:year_2016, :-1] # full_data 아닐 때는 2016년의 1년 data만 사용
-        for i in range(len(data) - (x_seq_length + y_seq_length - 1)): 
-            ele = [] 
-            ele.append(data[i: i + x_seq_length, :])
-            if y_seq_length == 1:
-                ele.append(data[i + x_seq_length, :])
-            else:
-                ele.append(data[i + x_seq_length : i + x_seq_length + y_seq_length, :])
-            seq.append(ele) 
+def define_dataset(data, data_type):
+    if data_type == Data_Type.FULL:
+        data = data[:, :-1]  
+    elif data_type == Data_Type.YEAR_2016:
+        data = data[year_2016_start:year_2016_end, :-1] 
+    elif data_type == Data_Type.YEAR_2017:
+        data = data[year_2017_start:year_2017_end, :-1]
+    elif data_type == Data_Type.YEAR_2018:
+        data = data[year_2018_start:year_2018_end, :-1]
+    elif data_type == Data_Type.YEAR_2019:
+        data = data[year_2019_start:year_2019_end, :-1]
+    else:
+        assert(data_type == Data_Type.YEAR_2020)
+        data = data[year_2020_start:year_2020_end, :-1]
+    return data
 
-        return seq
+def seq_data(data, x_seq_length, y_seq_length):  # x에는 0~4까지 5개 row가 들어가고, y에 5 (6번째) row 들어감 5일값으로 6일예측
+    seq = []
+    for i in range(len(data) - (x_seq_length + y_seq_length - 1)): 
+        ele = [] 
+        ele.append(data[i: i + x_seq_length, :])
+        if y_seq_length == 1:
+            ele.append(data[i + x_seq_length, :])
+        else:
+            ele.append(data[i + x_seq_length : i + x_seq_length + y_seq_length, :])
+        seq.append(ele) 
 
-def data_generator(root, filename, x_seq_length, y_seq_length, batch_size):
+    return seq
+
+def split_dataset(seq, data_type):
+    if data_type == Data_Type.FULL:
+        train_test_split = year_2020_start 
+    elif data_type == Data_Type.YEAR_2016:
+        train_test_split = year_2016_dec_start
+    elif data_type == Data_Type.YEAR_2017:
+        train_test_split = year_2017_dec_start
+    elif data_type == Data_Type.YEAR_2018:
+        train_test_split = year_2018_dec_start
+    elif data_type == Data_Type.YEAR_2019:
+        train_test_split = year_2019_dec_start
+    else:
+        assert(data_type == Data_Type.YEAR_2020)
+        train_test_split = year_2020_dec_start
+
+    train_seq = seq[:train_test_split]
+    test_seq = seq[train_test_split:]
+    val_seq = test_seq # val set = test set
+    print(len(train_seq), len(val_seq), len(test_seq))
+
+    return  train_seq, val_seq, test_seq
+
+def data_generator(root, filename, x_seq_length, y_seq_length, batch_size, data_type):
     print(root + filename)
     data = np.load(root + filename)
     print("data : {}".format(data.shape))
@@ -53,22 +114,12 @@ def data_generator(root, filename, x_seq_length, y_seq_length, batch_size):
     # 스케일링
     scaler = MinMaxScaler()
     data = scaler.fit_transform(data)
+    data = define_dataset(data, data_type)
     seq = seq_data(data, x_seq_length, y_seq_length) # seq_data 밑으로 data 사용하면 안됨. 
     print(len(seq), len(seq[0]), len(seq[0][0]), len(seq[0][0][0]))   # [2630877, 2, 5, 6]
 
     # split train set, val set, and test set
-    train_test_split = 2100000 if full_data else year_2016_dec_start # train: val and test의 비율 = 4:1 비율 
-    train_seq = seq[:train_test_split]
-    test_seq = seq[train_test_split:]
-
-    if full_data:
-        val_test_split = int(len(test_seq)/2)
-        val_seq = test_seq[:val_test_split] # val: test의 비율 = 1:1
-        test_seq = test_seq[val_test_split:]
-        print(len(train_seq), len(val_seq), len(test_seq))
-    else:
-        val_seq = test_seq # val set = test set
-        print(len(train_seq), len(val_seq), len(test_seq))
+    train_seq, val_seq, test_seq = split_dataset(seq, data_type)
 
     train_set = ELEDataset(train_seq) 
     val_set = ELEDataset(val_seq)
