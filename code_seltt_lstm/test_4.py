@@ -5,7 +5,7 @@ for ELE DATA
 import os, sys
 
 from time import time
-from comet_logger import CometLogger
+# from comet_logger import CometLogger
 
 import torch
 import argparse
@@ -22,7 +22,7 @@ from classifier_4 import MNIST_Classifier
 
 
 ### Running GPU Setting ##
-os.environ["CUDA_VISIBLE_DEVICES"] = '4'
+os.environ["CUDA_VISIBLE_DEVICES"] = '7'
 
 
 ##### 1. BASIC SETTING #####
@@ -108,8 +108,9 @@ else:
 
 ##  1.(4) Set Data and Parameters ##
 
-root = r'/home/youjin/research/tensor_new/data/space/altitude/'
+root = r'/home/youjin/research/seltt_lstm/code_seltt_lstm/data/space/altitude/'
 filename = 'K3A_EPH_ELE_altitude.npy'
+OUTPUT_FOLDER = r'./results/ele_'
 
 batch_size = args.batch_size
 n_classes = 6
@@ -119,8 +120,8 @@ if args.permute:    # each pixel(R,G,B pairs) is input for a time step.
     input_channels = 1      # input shape: [batch_size,seq_len,input_size]=[128, 30, 1]
 else:               # each row(of pixels) is input for a time step.
     input_channels = 6     # input shape: [batch_size,seq_len,input_size]=[128, 5, 6]
-x_seq_length = 10 # 현재: 궤도 6요소 -> 궤도 6요소 예측 / 궤도 6요소 -> altitude 예측할 때 다시 생각해봐야 함.
-y_seq_length = 10
+x_seq_length = 5 # 현재: 궤도 6요소 -> 궤도 6요소 예측 / 궤도 6요소 -> altitude 예측할 때 다시 생각해봐야 함.
+y_seq_length = 1
 
 
 
@@ -136,7 +137,7 @@ else:
     name = (f"{gru_name}_in{input_channels}_{mode_name}_n{args.n_layers}"
         f"_ncores{args.ncores}_r{args.ttrank}_h{args.hidden_size}_x{x_seq_length}_y{y_seq_length}_lr{args.lr}_ep{args.epochs}")
 
-sys.stdout = open(r'./results/ele_'+ name + '.txt', 'w')  # run결과 외부에 파일로 저장
+sys.stdout = open(OUTPUT_FOLDER + name + '.txt', 'w')  # run결과 외부에 파일로 저장
 print("File name : ",name)
 print("Arguments: ",args)
 print("Input Data Shape : [batch_size,seq_len,input_size]=[{},{},{}]".format(batch_size,x_seq_length,input_channels))
@@ -291,7 +292,7 @@ if __name__ == "__main__":
         test_loss = test(model, val_loader, epoch, "val")
         if args.lr_scheduler: scheduler.step()
         if separate_file_for_accuracy: 
-            with open(r'./ttlstm_ele_test/results/ele_'+ name + '_acc.txt', 'a') as f:
+            with open(OUTPUT_FOLDER + name + '_acc.txt', 'a') as f:
                 f.write('\n{} set: Epoch: {} Average loss: {:.8f}, Runtime: {:.0f} sec\n'.format(
                     "val", epoch, test_loss, time() - start))
         else:

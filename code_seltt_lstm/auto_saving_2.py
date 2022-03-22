@@ -5,22 +5,15 @@ import datetime
 import os
 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '5'
+os.environ["CUDA_VISIBLE_DEVICES"] = '4'
 
 
 # 한 폴더내에 반드시 epoch이 동일한 파일만 있어야 에러 안남
 
 ##### Folder and File list #####
-# INPUT_FOLDER = r'/media/data1/sel_ttlstm/mnist_results/default/'
-# INPUT_FOLDER = r'/media/data1/sel_ttlstm/mnist_results/lr/'
-# INPUT_FOLDER = r'/media/data1/sel_ttlstm/mnist_results/front_layer/'
-# INPUT_FOLDER = r'/media/data1/sel_ttlstm/mnist_results/titan_gpu/lr_rank_core/lr=0.001/'
-# INPUT_FOLDER = r'/media/data1/sel_ttlstm/mnist_results/titan_gpu/rank_core/'
-INPUT_FOLDER = r'/media/data1/sel_ttlstm/mnist_results/titan_gpu/rank_core/ep100/'
-# INPUT_FOLDER = r'./results/'
-# INPUT_FOLDER = r'./results/epoch10/'
-# INPUT_FILE = 'cifar10_'       # data name
-INPUT_FILE = ''             # data name
+INPUT_FOLDER = r'/media/data1/sel_ttlstm/ele_results/2016/k3a/x5_y1_ej/'
+# INPUT_FILE = 'cifar10_'       # filename starting with 'cifar10'
+INPUT_FILE = ''                 # all files
 all_files = sorted(glob.glob(INPUT_FOLDER + INPUT_FILE + '*combined.txt'))
 # all_files = sorted(glob.glob(INPUT_FOLDER + INPUT_FILE + '*.txt'))
 
@@ -68,16 +61,16 @@ for i, file in enumerate(all_files):
     # print("df:",df[1])
 
     runtime_list = [s for s in df if "Runtime" in s]        # list for runtime
-    accuracy_list = [s for s in df if "Accuracy" in s]      # list for accuracy and loss
-    # print("runtime_list:", runtime_list, len(runtime_list))
+    avg_loss_list = [s for s in df if "Average loss" in s]      # list for accuracy and loss
+    # print("\nruntime_list:", runtime_list, len(runtime_list))
+    # print("\navg_loss_list:", avg_loss_list, len(avg_loss_list))
 
 
 
 
 
     #### F1."File name" #####
-    df_main = pd.DataFrame({"File name":[file]}
-                           )
+    df_main = pd.DataFrame({"File name":[file]})
 
     ##### F2. "Namespace" #####
     file_name = file.split("/")
@@ -86,9 +79,14 @@ for i, file in enumerate(all_files):
     print("file name split :", file_name)
     f_dataset = file_name[0]
     idx = 2
+    idx_add_xy = 0             # in case of xy sizes in the filename
     if f_dataset == "lstm":
         idx = idx-1
         f_dataset = 'mnist'
+    if f_dataset == "ele":
+        idx_add_xy = 2
+        f_x_size = file_name[idx+6].split("x")[1]
+        f_y_size = file_name[idx+7].split("y")[1]
     f_input_size = file_name[idx].split("in")[1]
     f_hidden_size = file_name[idx+5].split("h")[1]
     f_mode = file_name[idx+1]
@@ -101,13 +99,13 @@ for i, file in enumerate(all_files):
         f_tt_ranks = ""
     elif f_mode == "sel":
         f_n_front_layer = (file_name[idx+2].split("(")[1]).split("+")[0]
-    lr_tmp = file_name[idx+6].split("lr")
+    lr_tmp = file_name[idx + idx_add_xy + 6].split("lr")
     if lr_tmp[0] == "":
         f_lr = lr_tmp[1]
-        f_epoch = file_name[idx + 7].split("ep")[1]
+        f_epoch = file_name[idx + idx_add_xy + 7].split("ep")[1]
     else:
         f_lr = 0.01
-        f_epoch = (file_name[idx + 6].split("ep")[1]).split(".")[0]
+        f_epoch = (file_name[idx + idx_add_xy + 6].split("ep")[1]).split(".")[0]
     print("f_dataset: {} / f_mode: {} / f_lr: {}".format(f_dataset, f_mode, f_lr))
     print("f_n_layer (front): {} ({}) / f_n_cores: {} / f_tt_ranks: {} ".format(f_n_layer,f_n_front_layer, f_n_cores,f_tt_ranks))
     print("f_input_size: {} / f_hidden_size: {} / f_epoch: {}".format(f_input_size,f_hidden_size,f_epoch))
@@ -115,6 +113,13 @@ for i, file in enumerate(all_files):
     df_tmp = pd.DataFrame({"dataset": [f_dataset], "input_size": [f_input_size], "hidden_size": [f_hidden_size],
                             "epochs":[f_epoch], "mode":[f_mode], "n_layers":[f_n_layer], "n_front_layers":[f_n_front_layer],
                             "ncores":[f_n_cores], "ttrank":[f_tt_ranks], "lr":[f_lr]})
+
+    if f_dataset == "ele":
+        f_x_size = file_name[idx + 6].split("x")[1]
+        f_y_size = file_name[idx + 7].split("y")[1]
+        df_tmp["x_size"] = f_x_size
+        df_tmp["y_size"] = f_y_size
+
 
     df_main = pd.concat([df_main, df_tmp], axis=1)
     print("df_main.columns : ",df_main.columns)
@@ -135,8 +140,11 @@ for i, file in enumerate(all_files):
     # for k in range(3,len(runtime_list)):
     for k in range(0,len(runtime_list)):
         if (k+1) % epoch_unit == 0:
-            df_main["accuracy_" + str('{0:03d}'.format(k+1))] = (accuracy_list[k].split("(")[1]).split("%")[0]
-            df_main["avg_loss_" + str('{0:03d}'.format(k+1))] = (accuracy_list[k].split("Average loss: ")[1]).split(", Accuracy")[0]
+            if f_dataset == "ele":
+                df_main["avg_loss_" + str('{0:03d}'.format(k + 1))] = (avg_loss_list[k].split("Average loss: ")[1]).split(", Runtime")[0]
+            else:
+                df_main["accuracy_" + str('{0:03d}'.format(k+1))] = (avg_loss_list[k].split("(")[1]).split("%")[0]
+                df_main["avg_loss_" + str('{0:03d}'.format(k+1))] = (avg_loss_list[k].split("Average loss: ")[1]).split(", Accuracy")[0]
             df_main["runtime_" + str('{0:03d}'.format(k+1))] = (runtime_list[k].split("Runtime: ")[1]).split(" sec")[0]
 
     print(df_main)

@@ -23,13 +23,13 @@ from classifier import MNIST_Classifier
 
 
 ### Running GPU Setting ##
-os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+# os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 # os.environ["CUDA_VISIBLE_DEVICES"] = '2'
 # os.environ["CUDA_VISIBLE_DEVICES"] = '3'
 # os.environ["CUDA_VISIBLE_DEVICES"] = '4'
 # os.environ["CUDA_VISIBLE_DEVICES"] = '5'
 # os.environ["CUDA_VISIBLE_DEVICES"] = '6'
-# os.environ["CUDA_VISIBLE_DEVICES"] = '7'
+os.environ["CUDA_VISIBLE_DEVICES"] = '7'
 
 
 ##### 1. BASIC SETTING #####
