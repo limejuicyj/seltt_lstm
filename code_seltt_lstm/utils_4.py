@@ -3,7 +3,7 @@ import numpy as np
 from torchvision import datasets, transforms
 from torch.utils.data import Dataset, random_split
 from sklearn.preprocessing import MinMaxScaler
-from enum import Enum
+from enum import IntEnum
 
 # definition
 data_composition = 1 # 1: (x-궤도 6 요소/y-궤도6요소) 2: (x-궤도6요소/y-altitude) 
@@ -28,7 +28,7 @@ year_2020_start = 2103841
 year_2020_dec_start = 2586241
 year_2020_end = -1
 
-class Data_Type(Enum):
+class Data_Type(IntEnum):
     FULL = 0
     YEAR_2016 = 1
     YEAR_2017 = 2
