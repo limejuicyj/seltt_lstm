@@ -86,18 +86,18 @@ def seq_data(data, x_seq_length, y_seq_length):  # x에는 0~4까지 5개 row가
 
 def split_dataset(seq, data_type):
     if data_type == Data_Type.FULL:
-        train_test_split = year_2020_start 
+        train_test_split = year_2020_start - year_2016_start
     elif data_type == Data_Type.YEAR_2016:
-        train_test_split = year_2016_dec_start
+        train_test_split = year_2016_dec_start - year_2016_start
     elif data_type == Data_Type.YEAR_2017:
-        train_test_split = year_2017_dec_start
+        train_test_split = year_2017_dec_start - year_2017_start
     elif data_type == Data_Type.YEAR_2018:
-        train_test_split = year_2018_dec_start
+        train_test_split = year_2018_dec_start - year_2018_start
     elif data_type == Data_Type.YEAR_2019:
-        train_test_split = year_2019_dec_start
+        train_test_split = year_2019_dec_start - year_2019_start
     else:
         assert(data_type == Data_Type.YEAR_2020)
-        train_test_split = year_2020_dec_start
+        train_test_split = year_2020_dec_start - year_2020_start
 
     train_seq = seq[:train_test_split]
     test_seq = seq[train_test_split:]
